@@ -13,20 +13,21 @@
                     {% csrf_token %}
 
                     <div class="mb-3">
-                        <label for="servico" class="form-label">Serviço</label>
+                        <label for="servico" class="form-label">Serviços (Selecione um ou mais)</label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="fas fa-cut"></i></span>
-                            <select class="form-select" id="servico" name="servico" required>
-                                <option value="">Selecione um serviço</option>
+                            <select class="form-select" id="servico" name="servico" multiple required size="4">
                                 {% for servico in servicos %}
-                                <option value="{{ servico.id }}" {% if
-                                    request.GET.servico|stringformat:"s"==servico.id|stringformat:"s" %}selected{% endif
+                                <option value="{{ servico.id }}" data-duracao="{{ servico.duracao }}" {% if
+                                    servico_selecionado|stringformat:"s"==servico.id|stringformat:"s" %}selected{% endif
                                     %}>
                                     {{ servico.nome }} - R$ {{ servico.preco }} ({{ servico.duracao }} min)
                                 </option>
                                 {% endfor %}
                             </select>
                         </div>
+                        <div class="form-text">Pressione Ctrl (Windows) ou Command (Mac) para selecionar múltiplos
+                            serviços</div>
                     </div>
 
                     <div class="mb-3">
@@ -36,7 +37,9 @@
                             <select class="form-select" id="barbeiro" name="barbeiro" required>
                                 <option value="">Selecione um barbeiro</option>
                                 {% for barbeiro in barbeiros %}
-                                <option value="{{ barbeiro.id }}">
+                                <option value="{{ barbeiro.id }}" {% if
+                                    barbeiro_selecionado|stringformat:"s"==barbeiro.id|stringformat:"s" %}selected{%
+                                    endif %}>
                                     {{ barbeiro.usuario.get_full_name }} - {{ barbeiro.especialidade }}
                                 </option>
                                 {% endfor %}
@@ -49,8 +52,8 @@
                             <label for="data" class="form-label">Data</label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="fas fa-calendar"></i></span>
-                                <input type="date" class="form-control" id="data" name="data"
-                                    min="{{ today|date:'Y-m-d' }}" required>
+                                <input type="date" class="form-control" id="data" name="data" min="{{ today }}"
+                                    value="{{ data_selecionada }}" required>
                             </div>
                         </div>
                         <div class="col-md-6 mb-3">
@@ -59,9 +62,6 @@
                                 <span class="input-group-text"><i class="fas fa-clock"></i></span>
                                 <select class="form-select" id="hora" name="hora" required>
                                     <option value="">Selecione um horário</option>
-                                    {% for hora in horarios %}
-                                    <option value="{{ hora }}">{{ hora }}</option>
-                                    {% endfor %}
                                 </select>
                             </div>
                         </div>
@@ -94,14 +94,16 @@
         })
     })()
 
+    // Validação da data
     document.getElementById('data').addEventListener('change', function () {
-        // Faz o parse da data no formato "YYYY-MM-DD" no fuso horário local
-        var parts = this.value.split('-'); // parts[0]=ano, parts[1]=mês, parts[2]=dia
-        var selectedDate = new Date(parts[0], parts[1] - 1, parts[2]); // meses vão de 0 a 11
-
+        var selectedDate = new Date(this.value);
         var today = new Date();
+
+        // Ajustar para o fuso horário local
+        selectedDate.setHours(0, 0, 0, 0);
         today.setHours(0, 0, 0, 0);
 
+        // Converter para timestamp para comparação
         var selectedTimestamp = selectedDate.getTime();
         var todayTimestamp = today.getTime();
 
@@ -111,6 +113,84 @@
             this.classList.add('is-invalid');
         } else {
             this.classList.remove('is-invalid');
+            atualizarHorarios();
+        }
+    });
+
+    let atualizandoHorarios = false;
+
+    // Atualização dinâmica dos horários disponíveis
+    function atualizarHorarios() {
+        if (atualizandoHorarios) return;
+
+        var servicoSelect = document.getElementById('servico');
+        var barbeiroSelect = document.getElementById('barbeiro');
+        var dataInput = document.getElementById('data');
+        var horaSelect = document.getElementById('hora');
+
+        // Pegar todos os serviços selecionados
+        var servicosSelecionados = Array.from(servicoSelect.selectedOptions).map(option => option.value);
+
+        // Verifica se todos os campos necessários estão preenchidos
+        if (servicosSelecionados.length > 0 && barbeiroSelect.value && dataInput.value) {
+            atualizandoHorarios = true;
+
+            // Construir a URL da API com os parâmetros
+            var url = '/api/horarios/?' +
+                'servico=' + encodeURIComponent(servicosSelecionados.join(',')) +
+                '&barbeiro=' + encodeURIComponent(barbeiroSelect.value) +
+                '&data=' + encodeURIComponent(dataInput.value);
+
+            // Fazer a requisição AJAX
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Erro na requisição: ' + response.status);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Atualizar o select de horários
+                    var options = '<option value="">Selecione um horário</option>';
+                    data.horarios.forEach(function (horario) {
+                        options += '<option value="' + horario + '">' + horario + '</option>';
+                    });
+                    horaSelect.innerHTML = options;
+                    atualizandoHorarios = false;
+                })
+                .catch(error => {
+                    console.error('Erro ao buscar horários:', error);
+                    alert('Erro ao buscar horários disponíveis. Por favor, tente novamente.');
+                    atualizandoHorarios = false;
+                });
+        }
+    }
+
+    // Adicionar listeners para atualização dos horários
+    document.getElementById('servico').addEventListener('change', atualizarHorarios);
+    document.getElementById('barbeiro').addEventListener('change', atualizarHorarios);
+
+    // Mostrar duração total dos serviços ao selecionar
+    document.getElementById('servico').addEventListener('change', function () {
+        var duracaoTotal = 0;
+        Array.from(this.selectedOptions).forEach(function (option) {
+            duracaoTotal += parseInt(option.getAttribute('data-duracao') || 0);
+        });
+
+        var horaLabel = document.querySelector('label[for="hora"]');
+        if (duracaoTotal > 0) {
+            horaLabel.innerHTML = 'Horário <small class="text-muted">(Duração total: ' + duracaoTotal + ' min)</small>';
+        } else {
+            horaLabel.innerHTML = 'Horário';
+        }
+    });
+
+    // Disparar o evento change do serviço ao carregar a página
+    window.addEventListener('load', function () {
+        var servicoSelect = document.getElementById('servico');
+        if (servicoSelect.value) {
+            var event = new Event('change');
+            servicoSelect.dispatchEvent(event);
         }
     });
 </script>

@@ -9,4 +9,5 @@ urlpatterns = [
     path('cancelar-agendamento/<int:agendamento_id>/', views.cancelar_agendamento, name='cancelar_agendamento'),
     path('login/', views.login_view, name='login'),
     path('register/', views.register, name='register'),
+    path('api/horarios/', views.get_horarios_disponiveis, name='api_horarios'),
 ] 
