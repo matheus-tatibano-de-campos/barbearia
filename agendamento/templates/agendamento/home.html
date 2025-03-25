@@ -1,0 +1,91 @@
+{% extends 'agendamento/base.html' %}
+{% load static %}
+
+{% block title %}Início - Barbearia{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="card bg-dark text-white">
+            <img src="{% static 'agendamento/images/registrar-marca-de-barbearia.jpg' %}" class="card-img"
+                alt="Barbearia" style="height: 400px; object-fit: cover;">
+            <div class="card-img-overlay d-flex align-items-center justify-content-center"
+                style="background: rgba(0, 0, 0, 0.5);">
+                <div class="text-center">
+                    <h1 class="display-4 fw-bold">Bem-vindo à Barbearia</h1>
+                    <p class="lead">Seu estilo, nossa especialidade</p>
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'agendar' %}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-calendar-plus"></i> Agendar Horário
+                    </a>
+                    {% else %}
+                    <a href="{% url 'login' %}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-sign-in-alt"></i> Faça Login para Agendar
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Serviços -->
+<div class="row mb-5">
+    <div class="col-12 text-center">
+        <h2 class="mb-4">Nossos Serviços</h2>
+        <p class="lead">Conheça todos os serviços que oferecemos</p>
+    </div>
+</div>
+
+<div class="row mb-5">
+    {% for servico in servicos %}
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">{{ servico.nome }}</h5>
+                <p class="card-text">{{ servico.descricao }}</p>
+                <p class="card-text">
+                    <strong>Duração:</strong> {{ servico.duracao }} minutos<br>
+                    <strong>Preço:</strong> R$ {{ servico.preco }}
+                </p>
+                {% if user.is_authenticated %}
+                <a href="{% url 'agendar' %}?servico={{ servico.id }}" class="btn btn-primary">
+                    Agendar
+                </a>
+                {% else %}
+                <a href="{% url 'login' %}" class="btn btn-primary">
+                    Faça login para agendar
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Equipe -->
+<div class="row mb-5">
+    <div class="col-12 text-center">
+        <h2 class="mb-4">Nossa Equipe</h2>
+        <p class="lead">Conheça nossos profissionais</p>
+    </div>
+</div>
+
+<div class="row">
+    {% for barbeiro in barbeiros %}
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body text-center">
+                <i class="fas fa-user-circle fa-4x mb-3 text-primary"></i>
+                <h5 class="card-title">{{ barbeiro.usuario.get_full_name }}</h5>
+                <p class="card-text">
+                    <strong>Especialidade:</strong> {{ barbeiro.especialidade }}<br>
+                    <strong>Telefone:</strong> {{ barbeiro.telefone }}
+                </p>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

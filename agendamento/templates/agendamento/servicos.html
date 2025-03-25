@@ -1,0 +1,48 @@
+{% extends 'agendamento/base.html' %}
+
+{% block title %}Serviços - Barbearia{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12 text-center">
+        <h2>Nossos Serviços</h2>
+        <p class="lead">Conheça todos os serviços que oferecemos</p>
+    </div>
+</div>
+
+<div class="row">
+    {% for servico in servicos %}
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">{{ servico.nome }}</h5>
+                <p class="card-text">{{ servico.descricao }}</p>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="mb-0">
+                            <i class="fas fa-clock"></i> {{ servico.duracao }} minutos<br>
+                            <i class="fas fa-dollar-sign"></i> R$ {{ servico.preco }}
+                        </p>
+                    </div>
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'agendar' %}?servico={{ servico.id }}" class="btn btn-primary">
+                        <i class="fas fa-calendar-plus"></i> Agendar
+                    </a>
+                    {% else %}
+                    <a href="{% url 'login' %}" class="btn btn-primary">
+                        <i class="fas fa-sign-in-alt"></i> Login para agendar
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center">
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> Nenhum serviço disponível no momento.
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

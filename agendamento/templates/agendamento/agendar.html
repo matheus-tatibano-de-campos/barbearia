@@ -1,0 +1,117 @@
+{% extends 'agendamento/base.html' %}
+
+{% block title %}Agendar - Barbearia{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-body">
+                <h2 class="card-title text-center mb-4">Agendar Horário</h2>
+
+                <form method="post" class="needs-validation" novalidate>
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label for="servico" class="form-label">Serviço</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-cut"></i></span>
+                            <select class="form-select" id="servico" name="servico" required>
+                                <option value="">Selecione um serviço</option>
+                                {% for servico in servicos %}
+                                <option value="{{ servico.id }}" {% if
+                                    request.GET.servico|stringformat:"s"==servico.id|stringformat:"s" %}selected{% endif
+                                    %}>
+                                    {{ servico.nome }} - R$ {{ servico.preco }} ({{ servico.duracao }} min)
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="barbeiro" class="form-label">Barbeiro</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-user-tie"></i></span>
+                            <select class="form-select" id="barbeiro" name="barbeiro" required>
+                                <option value="">Selecione um barbeiro</option>
+                                {% for barbeiro in barbeiros %}
+                                <option value="{{ barbeiro.id }}">
+                                    {{ barbeiro.usuario.get_full_name }} - {{ barbeiro.especialidade }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="data" class="form-label">Data</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-calendar"></i></span>
+                                <input type="date" class="form-control" id="data" name="data"
+                                    min="{{ today|date:'Y-m-d' }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="hora" class="form-label">Horário</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-clock"></i></span>
+                                <select class="form-select" id="hora" name="hora" required>
+                                    <option value="">Selecione um horário</option>
+                                    {% for hora in horarios %}
+                                    <option value="{{ hora }}">{{ hora }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-calendar-check"></i> Confirmar Agendamento
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Validação do formulário
+    (function () {
+        'use strict'
+        var forms = document.querySelectorAll('.needs-validation')
+        Array.prototype.slice.call(forms).forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                if (!form.checkValidity()) {
+                    event.preventDefault()
+                    event.stopPropagation()
+                }
+                form.classList.add('was-validated')
+            }, false)
+        })
+    })()
+
+    document.getElementById('data').addEventListener('change', function () {
+        // Faz o parse da data no formato "YYYY-MM-DD" no fuso horário local
+        var parts = this.value.split('-'); // parts[0]=ano, parts[1]=mês, parts[2]=dia
+        var selectedDate = new Date(parts[0], parts[1] - 1, parts[2]); // meses vão de 0 a 11
+
+        var today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        var selectedTimestamp = selectedDate.getTime();
+        var todayTimestamp = today.getTime();
+
+        if (selectedTimestamp < todayTimestamp) {
+            alert('Por favor, selecione uma data futura ou o dia atual.');
+            this.value = '';
+            this.classList.add('is-invalid');
+        } else {
+            this.classList.remove('is-invalid');
+        }
+    });
+</script>
+{% endblock %}

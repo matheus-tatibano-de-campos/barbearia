@@ -1,0 +1,67 @@
+{% extends 'agendamento/base.html' %}
+
+{% block title %}Meus Agendamentos - Barbearia{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-body">
+                <h2 class="card-title mb-4">Meus Agendamentos</h2>
+
+                {% if agendamentos %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Data/Hora</th>
+                                <th>Serviço</th>
+                                <th>Barbeiro</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for agendamento in agendamentos %}
+                            <tr>
+                                <td>{{ agendamento.data_hora|date:"d/m/Y H:i" }}</td>
+                                <td>{{ agendamento.servico.nome }}</td>
+                                <td>{{ agendamento.barbeiro.usuario.get_full_name }}</td>
+                                <td>
+                                    <span class="badge {% if agendamento.status == 'AGENDADO' %}bg-success
+                                                         {% elif agendamento.status == 'CONCLUIDO' %}bg-primary
+                                                         {% else %}bg-danger{% endif %}">
+                                        {{ agendamento.status }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if agendamento.status == 'AGENDADO' %}
+                                    <form method="post" action="{% url 'cancelar_agendamento' agendamento.id %}"
+                                        class="d-inline"
+                                        onsubmit="return confirm('Tem certeza que deseja cancelar este agendamento?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-danger btn-sm">
+                                            <i class="fas fa-times"></i> Cancelar
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                    <p class="lead">Você ainda não possui nenhum agendamento.</p>
+                    <a href="{% url 'agendar' %}" class="btn btn-primary">
+                        <i class="fas fa-calendar-plus"></i> Fazer Agendamento
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
